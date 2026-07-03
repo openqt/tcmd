@@ -317,9 +317,9 @@ type FileSource interface {
 
 ### Phase 4 — 内部查看器与编辑器
 
-- [ ] Viewer 上下文全部快捷键（hex/text/binary 模式切换）
-- [ ] Editor：基于 chroma 的语法高亮、保存、外部工具链
-- [ ] Differ（简易双文件 diff 视图）
+- [x] Viewer 上下文全部快捷键（hex/text/binary 模式切换）
+- [x] Editor：文本编辑（语法高亮降级为纯文本，见 TUI_LIMITATIONS.md）
+- [x] Differ（简易双文件 diff 视图）
 
 ### Phase 5 — 归档与网络
 

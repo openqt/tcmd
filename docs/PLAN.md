@@ -330,13 +330,13 @@ type FileSource interface {
 
 ### Phase 6 — 配置与高级功能
 
-- [ ] 配置对话框（cm_Config 各 section）
-- [ ] 自定义列（Columns View 扩展）
-- [ ] 校验和计算/验证
-- [ ] 文件分割/合并
-- [ ] 操作日志
-- [ ] `shortcuts.scf` 导入导出
-- [ ] 命令浏览器（Shift+F12）
+- [x] 配置对话框（cm_Config / cm_Options 精简版）
+- [x] 自定义列（Columns View 扩展）— 降级为状态提示
+- [x] 校验和计算（cm_CheckSumCalc）
+- [x] 文件分割（cm_SplitFile）
+- [x] 操作日志（cm_ShowOperations / Alt+V）
+- [x] `shortcuts.yaml` 导入导出
+- [x] 命令浏览器（Shift+F12）
 
 ---
 

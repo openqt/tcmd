@@ -15,6 +15,7 @@ import (
 	"github.com/openqt/tcmd/internal/panel"
 	"github.com/openqt/tcmd/internal/platform"
 	"github.com/openqt/tcmd/internal/ui/mainview"
+	"github.com/openqt/tcmd/internal/ui/viewer"
 )
 
 // Model is the root Bubble Tea model.
@@ -32,6 +33,10 @@ type Model struct {
 	cmdHist  []string
 	cmdIdx   int
 	viewer   string
+	viewerMode viewer.Mode
+	editorPath string
+	editor     string
+	differText string
 	quickView string
 	quitting bool
 	driveIdx  int
@@ -61,6 +66,7 @@ func NewModel(leftPath, rightPath string) *Model {
 	builtin.RegisterPhase1(registry, m)
 	builtin.RegisterPhase2(registry, m)
 	builtin.RegisterPhase3(registry, m)
+	builtin.RegisterPhase4(registry, m)
 	_ = m.leftNB.Current().Load(source)
 	_ = m.rightNB.Current().Load(source)
 	return m
@@ -104,6 +110,16 @@ func (m *Model) handleInput(msg tea.KeyMsg) bool {
 	if m.viewer != "" && (key == "Esc" || key == "Q") {
 		m.viewer = ""
 		m.status = "Viewer closed"
+		return true
+	}
+	if m.editor != "" && key == "Esc" {
+		m.editor = ""
+		m.status = "Editor closed"
+		return true
+	}
+	if m.differText != "" && key == "Esc" {
+		m.differText = ""
+		m.status = "Differ closed"
 		return true
 	}
 	if m.activePanel().Renaming {
@@ -268,8 +284,18 @@ func (m Model) View() string {
 		return ""
 	}
 	viewer := m.viewer
-	if viewer != "" {
-		viewer = mainview.RenderViewer("", viewer, 4)
+	if m.editor != "" {
+		viewer = "EDITOR\n" + m.editor
+	}
+	if m.differText != "" {
+		viewer = "DIFFER\n" + m.differText
+	}
+	if viewer != "" && m.viewer != "" {
+		viewer = mainview.RenderViewer("", viewer, 8)
+	} else if viewer != "" {
+		viewer = mainview.RenderViewer("", viewer, 8)
+	} else if m.viewer != "" {
+		viewer = mainview.RenderViewer("", m.viewer, 4)
 	}
 	qv := m.quickView
 	if m.driveMode {

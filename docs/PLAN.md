@@ -298,22 +298,22 @@ type FileSource interface {
 
 ### Phase 2 — 导航增强与标签页
 
-- [ ] 目录历史 Alt+↓、Alt+←/→
-- [ ] 标签页：Ctrl+T/W、Ctrl+Tab、Alt+1..9/0
-- [ ] Quick Filter（Ctrl+S）、Quick Search（输入即搜）
-- [ ] Flat View（Ctrl+B / Ctrl+Shift+B）
-- [ ] Quick View（Ctrl+Q）在第三栏显示文件头内容
-- [ ] 命令行：Ctrl+L 聚焦、历史 Alt+F8/Ctrl+↓、Enter 执行
-- [ ] 剪贴板：Ctrl+C/X/V 文件路径
+- [x] 目录历史 Alt+↓、Alt+←/→
+- [x] 标签页：Ctrl+T/W、Ctrl+Tab、Alt+1..9/0
+- [x] Quick Filter（Ctrl+S）、Quick Search（输入即搜）
+- [x] Flat View（Ctrl+B / Ctrl+Shift+B）
+- [x] Quick View（Ctrl+Q）在第三栏显示文件头内容
+- [x] 命令行：Ctrl+L 聚焦、历史 Alt+F8/Ctrl+↓、Enter 执行
+- [x] 剪贴板：Ctrl+C/X/V 文件路径
 
 ### Phase 3 — 工具对话框
 
-- [ ] **Find Files**（Alt+F7）：标准/高级/结果页，F9 开始搜索
-- [ ] **Multi-Rename Tool**（Ctrl+M）：规则预设、占位符、F9 执行
-- [ ] **Synchronize Directories**（未绑定默认键，cm_CompareDirectories）：双目录比较
-- [ ] **Directory Hotlist**（Ctrl+D）：收藏目录
-- [ ] **Copy/Move Dialog** 完整字段循环（F2 切换目标字段）
-- [ ] 文件注释（Ctrl+Z）、属性（Alt+Enter 精简版）
+- [x] **Find Files**（Alt+F7）：标准/高级/结果页，F9 开始搜索
+- [x] **Multi-Rename Tool**（Ctrl+M）：规则预设、占位符、F9 执行
+- [x] **Synchronize Directories**（Shift+F2）：双目录比较
+- [x] **Directory Hotlist**（Ctrl+D）：收藏目录
+- [x] **Copy/Move Dialog** 完整字段循环（Shift+F5）
+- [x] 文件注释（Ctrl+Z）、属性（Alt+Enter 精简版）
 
 ### Phase 4 — 内部查看器与编辑器
 

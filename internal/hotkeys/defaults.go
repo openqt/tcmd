@@ -9,6 +9,7 @@ func DefaultMainBindings() []Binding {
 		{Key: "F3", Command: "cm_View"},
 		{Key: "F4", Command: "cm_Edit"},
 		{Key: "F5", Command: "cm_Copy"},
+		{Key: "Shift+F5", Command: "cm_ShowCopyMoveDialog"},
 		{Key: "F6", Command: "cm_Rename"},
 		{Key: "F7", Command: "cm_MakeDir"},
 		{Key: "F8", Command: "cm_Delete"},
@@ -57,6 +58,12 @@ func DefaultMainBindings() []Binding {
 		{Key: "Space", Command: "cm_CalculateSpace"},
 		{Key: "Up", Command: "cm_MoveUp"},
 		{Key: "Down", Command: "cm_MoveDown"},
+		{Key: "Alt+F7", Command: "cm_Find"},
+		{Key: "Ctrl+M", Command: "cm_MultiRename"},
+		{Key: "Ctrl+D", Command: "cm_DirHotList"},
+		{Key: "Ctrl+Z", Command: "cm_EditDescr"},
+		{Key: "Alt+Enter", Command: "cm_Properties"},
+		{Key: "Shift+F2", Command: "cm_CompareDirectories"},
 		{Key: "*", Command: "cm_InvertSelection"},
 	}
 }

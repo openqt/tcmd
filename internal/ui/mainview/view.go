@@ -27,7 +27,7 @@ var (
 )
 
 // Render draws the main window.
-func Render(width, height int, active panel.Side, left, right *panel.Panel, status, prompt, viewer, quickView string, leftTabs, rightTabs []string) string {
+func Render(width, height int, active panel.Side, left, right *panel.Panel, status, prompt, viewer, quickView string, leftTabs, rightTabs []string, overlay string) string {
 	if width < 20 {
 		width = 20
 	}
@@ -85,7 +85,11 @@ func Render(width, height int, active panel.Side, left, right *panel.Panel, stat
 	if viewer != "" {
 		lines = append(lines[:4], viewerStyle.Width(width-2).Render(shorten(viewer, width*2)), lines[4], lines[5])
 	}
-	return strings.Join(lines, "\n")
+	out := strings.Join(lines, "\n")
+	if overlay != "" {
+		out += "\n" + overlay
+	}
+	return out
 }
 
 func formatTabs(tabs []string) string {

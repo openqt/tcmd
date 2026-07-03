@@ -37,6 +37,7 @@ type Model struct {
 	driveIdx  int
 	driveFor  panel.Side
 	driveMode bool
+	dlg       dialogState
 
 	source     filesrc.Source
 	registry   *commands.Registry
@@ -59,6 +60,7 @@ func NewModel(leftPath, rightPath string) *Model {
 	builtin.RegisterPhase0(registry)
 	builtin.RegisterPhase1(registry, m)
 	builtin.RegisterPhase2(registry, m)
+	builtin.RegisterPhase3(registry, m)
 	_ = m.leftNB.Current().Load(source)
 	_ = m.rightNB.Current().Load(source)
 	return m
@@ -87,6 +89,9 @@ func (m *Model) handleInput(msg tea.KeyMsg) bool {
 	if m.driveMode {
 		m.handleDriveKey(key)
 		return true
+	}
+	if m.dlg.kind != "" {
+		return m.handleDialogKey(msg, key)
 	}
 	if m.cmdFocus {
 		m.handleCmdLineKey(msg, key)
@@ -280,7 +285,7 @@ func (m Model) View() string {
 		cmd = m.prompt
 	}
 	return mainview.Render(m.width, m.height, m.active, m.leftNB.Current(), m.rightNB.Current(), m.status, cmd, viewer, qv,
-		m.leftNB.TabTitles(), m.rightNB.TabTitles())
+		m.leftNB.TabTitles(), m.rightNB.TabTitles(), m.renderDialog())
 }
 
 func (m *Model) execute(command string, params []string) {

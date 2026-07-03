@@ -276,11 +276,11 @@ type FileSource interface {
 
 ### Phase 0 — 基础设施
 
-- [ ] 初始化 Go module、CI（`go test ./...`、`golangci-lint`）
-- [ ] 命令注册表骨架 + 热键分发器
-- [ ] 从 DC `uglobs.pas` 提取默认快捷键，生成 `docs/SHORTCUTS.md`
-- [ ] 主窗口空壳：双面板 + 状态栏 + F 键栏
-- [ ] 配置目录：`~/.config/dc-tui/`（或 `$XDG_CONFIG_HOME`）
+- [x] 初始化 Go module、CI（`go test ./...`、`golangci-lint`）
+- [x] 命令注册表骨架 + 热键分发器
+- [x] 从 DC `uglobs.pas` 提取默认快捷键，生成 `docs/SHORTCUTS.md`
+- [x] 主窗口空壳：双面板 + 状态栏 + F 键栏
+- [x] 配置目录：`~/.config/dc-tui/`（或 `$XDG_CONFIG_HOME`）
 
 **交付物**：可启动的空双面板应用，Tab 切换焦点，Quit（Alt+F4 / Alt+X）。
 

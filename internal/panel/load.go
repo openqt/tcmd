@@ -14,10 +14,13 @@ func (p *Panel) Load(src filesrc.Source) error {
 	}
 	p.Entries = entries
 	p.Sort()
-	if p.Cursor >= len(p.Entries) {
-		p.Cursor = max(0, len(p.Entries)-1)
+	if p.Cursor >= len(p.VisibleEntries()) {
+		p.Cursor = max(0, len(p.VisibleEntries())-1)
 	}
 	p.ClearDirSizeHint()
+	if p.History != nil {
+		p.History.Push(p.Path)
+	}
 	return nil
 }
 

@@ -29,17 +29,22 @@ const (
 
 // Panel holds per-panel file browser state.
 type Panel struct {
-	Side        Side
-	Path        string
-	Entries     []filesrc.Entry
-	Cursor      int
-	Selected    map[string]bool
-	ShowHidden  bool
-	SortMode    SortMode
-	Reverse     bool
-	DirSizeHint string
-	Renaming    bool
-	RenameValue string
+	Side         Side
+	Path         string
+	Entries      []filesrc.Entry
+	FlatEntries  []filesrc.Entry
+	Cursor       int
+	Selected     map[string]bool
+	ShowHidden   bool
+	SortMode     SortMode
+	Reverse      bool
+	DirSizeHint  string
+	Renaming     bool
+	RenameValue  string
+	QuickFilter  string
+	QuickSearch  string
+	FlatView     bool
+	History      *History
 }
 
 // New creates a panel at the given path.
@@ -49,6 +54,7 @@ func New(side Side, path string) *Panel {
 		Path:     path,
 		Selected: make(map[string]bool),
 		SortMode: SortByName,
+		History:  NewHistory(),
 	}
 }
 
@@ -60,12 +66,13 @@ func (p *Panel) Title() string {
 	return p.Path
 }
 
-// Current returns the entry under the cursor.
+// Current returns the entry under the cursor from visible entries.
 func (p *Panel) Current() *filesrc.Entry {
-	if p == nil || p.Cursor < 0 || p.Cursor >= len(p.Entries) {
+	entries := p.VisibleEntries()
+	if p == nil || p.Cursor < 0 || p.Cursor >= len(entries) {
 		return nil
 	}
-	entry := p.Entries[p.Cursor]
+	entry := entries[p.Cursor]
 	return &entry
 }
 
@@ -184,12 +191,13 @@ func (p *Panel) MoveCursor(delta int) {
 	}
 }
 
-// FormatEntry returns a display line for an entry.
+// FormatEntry returns a display line for a visible entry index.
 func (p *Panel) FormatEntry(i int, width int) string {
-	if i < 0 || i >= len(p.Entries) {
+	entries := p.VisibleEntries()
+	if i < 0 || i >= len(entries) {
 		return ""
 	}
-	e := p.Entries[i]
+	e := entries[i]
 	prefix := "  "
 	if i == p.Cursor {
 		prefix = "> "

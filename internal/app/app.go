@@ -22,15 +22,20 @@ type Model struct {
 	width    int
 	height   int
 	active   panel.Side
-	left     *panel.Panel
-	right    *panel.Panel
+	leftNB   *panel.Notebook
+	rightNB  *panel.Notebook
 	status   string
 	prompt   string
 	promptFn string
+	cmdLine  string
+	cmdFocus bool
+	cmdHist  []string
+	cmdIdx   int
 	viewer   string
+	quickView string
 	quitting bool
-	driveIdx int
-	driveFor panel.Side
+	driveIdx  int
+	driveFor  panel.Side
 	driveMode bool
 
 	source     filesrc.Source
@@ -44,17 +49,18 @@ func NewModel(leftPath, rightPath string) *Model {
 	registry := commands.NewRegistry()
 	m := &Model{
 		active:     panel.Left,
-		left:       panel.New(panel.Left, leftPath),
-		right:      panel.New(panel.Right, rightPath),
-		status:     "dc-tui Phase 1",
+		leftNB:     panel.NewNotebook(panel.Left, leftPath),
+		rightNB:    panel.NewNotebook(panel.Right, rightPath),
+		status:     "dc-tui Phase 2",
 		source:     source,
 		registry:   registry,
 		dispatcher: hotkeys.NewDispatcher(nil),
 	}
 	builtin.RegisterPhase0(registry)
 	builtin.RegisterPhase1(registry, m)
-	_ = m.left.Load(source)
-	_ = m.right.Load(source)
+	builtin.RegisterPhase2(registry, m)
+	_ = m.leftNB.Current().Load(source)
+	_ = m.rightNB.Current().Load(source)
 	return m
 }
 
@@ -82,6 +88,10 @@ func (m *Model) handleInput(msg tea.KeyMsg) bool {
 		m.handleDriveKey(key)
 		return true
 	}
+	if m.cmdFocus {
+		m.handleCmdLineKey(msg, key)
+		return true
+	}
 	if m.prompt != "" {
 		m.handlePromptKey(msg, key)
 		return true
@@ -96,11 +106,46 @@ func (m *Model) handleInput(msg tea.KeyMsg) bool {
 		return true
 	}
 
+	// Quick search: printable keys without modifiers
+	if msg.Type == tea.KeyRunes && len(msg.Runes) == 1 && !msg.Alt && key != "Tab" {
+		if key == " " {
+			// fall through to command dispatch for space
+		} else if key[0] >= 'A' && key[0] <= 'Z' || (key[0] >= '0' && key[0] <= '9') {
+			m.activePanel().QuickSearch += strings.ToLower(key)
+			m.activePanel().QuickFilter = m.activePanel().QuickSearch
+			m.status = "Search: " + m.activePanel().QuickSearch
+			return true
+		}
+	}
+
 	if match, ok := m.dispatcher.LookupMsg(hotkeys.ContextMain, msg); ok {
 		m.execute(match.Command, match.Params)
 		return true
 	}
 	return false
+}
+
+func (m *Model) handleCmdLineKey(msg tea.KeyMsg, key string) {
+	switch key {
+	case "Esc":
+		m.cmdFocus = false
+		m.cmdLine = ""
+	case "Enter":
+		m.cmdHist = append(m.cmdHist, m.cmdLine)
+		m.cmdIdx = len(m.cmdHist)
+		if err := m.ExecuteCmdLine(); err != nil {
+			m.status = err.Error()
+		}
+		m.cmdFocus = false
+	case "Backspace":
+		if len(m.cmdLine) > 0 {
+			m.cmdLine = m.cmdLine[:len(m.cmdLine)-1]
+		}
+	default:
+		if msg.Type == tea.KeyRunes {
+			m.cmdLine += string(msg.Runes)
+		}
+	}
 }
 
 func (m *Model) handleRenameKey(msg tea.KeyMsg, key string) {
@@ -168,6 +213,10 @@ func (m *Model) handlePromptKey(msg tea.KeyMsg, key string) {
 					_ = m.ReloadBoth()
 				}
 			}
+		case "filter":
+			m.activePanel().QuickFilter = value
+			m.activePanel().QuickSearch = value
+			m.status = "Filter: " + value
 		}
 		m.promptFn = ""
 	default:
@@ -197,9 +246,9 @@ func (m *Model) handleDriveKey(key string) {
 			m.driveIdx = 0
 		}
 	case "Enter":
-		p := m.left
+		p := m.leftNB.Current()
 		if m.driveFor == panel.Right {
-			p = m.right
+			p = m.rightNB.Current()
 		}
 		p.Path = drives[m.driveIdx]
 		_ = p.Load(m.source)
@@ -217,13 +266,21 @@ func (m Model) View() string {
 	if viewer != "" {
 		viewer = mainview.RenderViewer("", viewer, 4)
 	}
+	qv := m.quickView
 	if m.driveMode {
 		drives := platform.Drives()
 		if m.driveIdx < len(drives) {
 			m.status = "Drive: " + drives[m.driveIdx]
 		}
 	}
-	return mainview.Render(m.width, m.height, m.active, m.left, m.right, m.status, m.prompt, viewer)
+	cmd := m.cmdLine
+	if m.cmdFocus {
+		cmd = m.cmdLine + "_"
+	} else if m.prompt != "" {
+		cmd = m.prompt
+	}
+	return mainview.Render(m.width, m.height, m.active, m.leftNB.Current(), m.rightNB.Current(), m.status, cmd, viewer, qv,
+		m.leftNB.TabTitles(), m.rightNB.TabTitles())
 }
 
 func (m *Model) execute(command string, params []string) {
@@ -232,11 +289,11 @@ func (m *Model) execute(command string, params []string) {
 }
 
 func (m *Model) commandContext() *commands.Context {
-	active := m.left
-	inactive := m.right
+	active := m.leftNB.Current()
+	inactive := m.rightNB.Current()
 	if m.active == panel.Right {
-		active = m.right
-		inactive = m.left
+		active = m.rightNB.Current()
+		inactive = m.leftNB.Current()
 	}
 	return &commands.Context{
 		ActivePanel:   active,
@@ -261,39 +318,46 @@ func (m *Model) switchPanel() {
 
 func (m *Model) activePanel() *panel.Panel {
 	if m.active == panel.Right {
-		return m.right
+		return m.rightNB.Current()
 	}
-	return m.left
+	return m.leftNB.Current()
 }
 
 func (m *Model) inactivePanel() *panel.Panel {
 	if m.active == panel.Right {
-		return m.left
+		return m.leftNB.Current()
 	}
-	return m.right
+	return m.rightNB.Current()
 }
 
-// AppServices implementation
+// AppServices + Phase2App
 
-func (m *Model) ActivePanel() *panel.Panel   { return m.activePanel() }
-func (m *Model) InactivePanel() *panel.Panel { return m.inactivePanel() }
-func (m *Model) Source() filesrc.Source      { return m.source }
-
-func (m *Model) ReloadActive() error {
-	return m.activePanel().Load(m.source)
+func (m *Model) ActivePanel() *panel.Panel     { return m.activePanel() }
+func (m *Model) InactivePanel() *panel.Panel   { return m.inactivePanel() }
+func (m *Model) Source() filesrc.Source        { return m.source }
+func (m *Model) Notebook(side panel.Side) *panel.Notebook {
+	if side == panel.Right {
+		return m.rightNB
+	}
+	return m.leftNB
 }
+func (m *Model) ActiveNotebook() *panel.Notebook { return m.Notebook(m.active) }
 
+func (m *Model) ReloadActive() error  { return m.activePanel().Load(m.source) }
 func (m *Model) ReloadBoth() error {
-	if err := m.left.Load(m.source); err != nil {
+	if err := m.leftNB.Current().Load(m.source); err != nil {
 		return err
 	}
-	return m.right.Load(m.source)
+	return m.rightNB.Current().Load(m.source)
+}
+func (m *Model) ReloadNotebook(nb *panel.Notebook) error {
+	return nb.Current().Load(m.source)
 }
 
 func (m *Model) SwapPanels() {
-	m.left, m.right = m.right, m.left
-	m.left.Side = panel.Left
-	m.right.Side = panel.Right
+	m.leftNB, m.rightNB = m.rightNB, m.leftNB
+	m.leftNB.Side = panel.Left
+	m.rightNB.Side = panel.Right
 }
 
 func (m *Model) OpenOtherPanelPath() {
@@ -303,7 +367,6 @@ func (m *Model) OpenOtherPanelPath() {
 }
 
 func (m *Model) SetPrompt(text string) {
-	m.prompt = strings.TrimPrefix(text, strings.SplitN(text, ":", 2)[0]+": ")
 	if strings.HasPrefix(text, "New directory") {
 		m.promptFn = "mkdir"
 		m.prompt = ""
@@ -314,8 +377,50 @@ func (m *Model) SetPrompt(text string) {
 		m.prompt = ""
 		return
 	}
-	m.promptFn = ""
+	m.promptFn = "filter"
+	m.prompt = ""
 }
+
+func (m *Model) SetCmdLineFocus(on bool) { m.cmdFocus = on }
+func (m *Model) AppendCmdLine(s string)  { m.cmdLine += s }
+
+func (m *Model) ExecuteCmdLine() error {
+	cmd := strings.TrimSpace(m.cmdLine)
+	if cmd == "" {
+		return nil
+	}
+	if strings.HasPrefix(cmd, "cd ") {
+		m.activePanel().Path = strings.TrimSpace(strings.TrimPrefix(cmd, "cd "))
+		return m.activePanel().Load(m.source)
+	}
+	return builtin.RunShell(cmd, m.activePanel().Path)
+}
+
+func (m *Model) CmdLineHistoryPrev() {
+	if len(m.cmdHist) == 0 {
+		return
+	}
+	if m.cmdIdx > 0 {
+		m.cmdIdx--
+	}
+	m.cmdLine = m.cmdHist[m.cmdIdx]
+	m.cmdFocus = true
+}
+
+func (m *Model) SetQuickView(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		m.status = err.Error()
+		return
+	}
+	content := string(data)
+	if len(content) > 800 {
+		content = content[:800] + "..."
+	}
+	m.quickView = mainview.RenderViewer(path, content, 4)
+}
+
+func (m *Model) ClearQuickView() { m.quickView = "" }
 
 func (m *Model) SetViewer(path string) {
 	data, err := os.ReadFile(path)
@@ -338,7 +443,6 @@ func (m *Model) DriveMenu(side panel.Side) {
 	m.status = "Select drive"
 }
 
-// ActivePanelSide returns focused panel side (testing).
 func (m Model) ActivePanelSide() panel.Side { return m.active }
-func (m Model) Status() string              { return m.status }
-func (m Model) Quitting() bool              { return m.quitting }
+func (m Model) Status() string               { return m.status }
+func (m Model) Quitting() bool               { return m.quitting }

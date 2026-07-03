@@ -25,6 +25,7 @@ type AppServices interface {
 	SetPrompt(string)
 	SetViewer(string)
 	DriveMenu(panel.Side)
+	EnterArchive(path string) error
 }
 
 // RegisterPhase1 registers core file management commands.
@@ -43,6 +44,14 @@ func RegisterPhase1(r *commands.Registry, app AppServices) {
 			return commands.ResultDisabled
 		}
 		if cur.IsDir {
+			if filesrc.IsArchiveFile(cur.Path) {
+				if err := app.EnterArchive(cur.Path); err != nil {
+					ctx.SetStatus(err.Error())
+					return commands.ResultDisabled
+				}
+				ctx.SetStatus("Archive")
+				return commands.ResultSuccess
+			}
 			if err := p.EnterDirectory(app.Source()); err != nil {
 				ctx.SetStatus(err.Error())
 				return commands.ResultDisabled

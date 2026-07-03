@@ -4,10 +4,34 @@ import (
 	"path/filepath"
 
 	"github.com/openqt/tcmd/internal/filesrc"
+	"github.com/openqt/tcmd/internal/filesrc/archive"
 )
 
 // Load reads directory entries into the panel.
 func (p *Panel) Load(src filesrc.Source) error {
+	if arch, inner, ok := archive.ParseArchivePath(p.Path); ok {
+		z := archive.NewZip(arch)
+		zentries, err := z.List(inner, p.ShowHidden)
+		if err != nil {
+			return err
+		}
+		p.Entries = make([]filesrc.Entry, len(zentries))
+		for i, e := range zentries {
+			p.Entries[i] = filesrc.Entry{
+				Name:    e.Name,
+				Path:    archive.JoinArchivePath(arch, e.Path),
+				IsDir:   e.IsDir,
+				Size:    e.Size,
+				ModTime: e.ModTime,
+			}
+		}
+		if p.Cursor >= len(p.VisibleEntries()) {
+			p.Cursor = max(0, len(p.VisibleEntries())-1)
+		}
+		p.ClearDirSizeHint()
+		return nil
+	}
+
 	entries, err := src.List(p.Path, p.ShowHidden)
 	if err != nil {
 		return err
@@ -38,6 +62,21 @@ func (p *Panel) EnterDirectory(src filesrc.Source) error {
 
 // ParentDirectory moves to parent path.
 func (p *Panel) ParentDirectory(src filesrc.Source) error {
+	if arch, inner, ok := archive.ParseArchivePath(p.Path); ok {
+		if inner == "" {
+			p.Path = arch
+		} else {
+			parent := filepath.Dir(inner)
+			if parent == "." {
+				p.Path = archive.JoinArchivePath(arch, "")
+			} else {
+				p.Path = archive.JoinArchivePath(arch, parent)
+			}
+		}
+		p.Cursor = 0
+		p.ClearSelection()
+		return p.Load(src)
+	}
 	parent := filepath.Dir(p.Path)
 	if parent == p.Path && p.Path != "/" {
 		return nil

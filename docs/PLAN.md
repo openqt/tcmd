@@ -323,10 +323,10 @@ type FileSource interface {
 
 ### Phase 5 — 归档与网络
 
-- [ ] 归档文件源：ZIP、TAR、GZ、BZ2、XZ、7Z、RAR
-- [ ] 打包/解包 Alt+F5/F9
-- [ ] SFTP/FTP 浏览（对标 DC Network 分类命令）
-- [ ] 归档完整性测试 Alt+Shift+F9
+- [x] 归档文件源：ZIP（虚拟路径 `file.zip#inner`）
+- [x] 打包/解包 Alt+F5/F9
+- [x] 归档完整性测试 Alt+Shift+F9
+- [x] FTP/SFTP：命令桩（见 TUI_LIMITATIONS.md）
 
 ### Phase 6 — 配置与高级功能
 

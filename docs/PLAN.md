@@ -286,13 +286,13 @@ type FileSource interface {
 
 ### Phase 1 — 核心文件管理（MVP）
 
-- [ ] 本地 `FileSource`：列表、排序（Ctrl+F3–F6）、隐藏文件（Ctrl+H）
-- [ ] 导航：Enter、Backspace、Ctrl+\、Ctrl+←/→、Space 计算目录大小
-- [ ] 选择：Insert、Ctrl+A、小键盘 *、扩展/收缩选择
-- [ ] 文件操作：F5 复制、F6 移动/重命名、F7 建目录、F8 删除（含 Shift 永久删除）
-- [ ] F2 重命名、F3 简易查看（文本）、F4 外部编辑器调用
-- [ ] 面板交换 Ctrl+U、目标=源 Ctrl+\
-- [ ] 驱动器列表 Alt+F1/F2
+- [x] 本地 `FileSource`：列表、排序（Ctrl+F3–F6）、隐藏文件（Ctrl+H）
+- [x] 导航：Enter、Backspace、Ctrl+\、Ctrl+←/→、Space 计算目录大小
+- [x] 选择：Insert、Ctrl+A、小键盘 *、扩展/收缩选择
+- [x] 文件操作：F5 复制、F6 移动/重命名、F7 建目录、F8 删除（含 Shift 永久删除）
+- [x] F2 重命名、F3 简易查看（文本）、F4 外部编辑器调用
+- [x] 面板交换 Ctrl+U、目标=源 Ctrl+\
+- [x] 驱动器列表 Alt+F1/F2
 
 **验收**：完成日常双面板复制/移动/删除，快捷键与 DC 主窗口表一致。
 

@@ -68,6 +68,7 @@ func NewModel(leftPath, rightPath string) *Model {
 	builtin.RegisterPhase3(registry, m)
 	builtin.RegisterPhase4(registry, m)
 	builtin.RegisterPhase5(registry, m)
+	builtin.RegisterPhase6(registry, m)
 	_ = m.leftNB.Current().Load(source)
 	_ = m.rightNB.Current().Load(source)
 	return m

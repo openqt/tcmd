@@ -23,10 +23,11 @@ var (
 	statusStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 	cmdLineStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
 	viewerStyle  = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(0, 1)
+	qvStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("252")).Border(lipgloss.NormalBorder()).Padding(0, 1)
 )
 
 // Render draws the main window.
-func Render(width, height int, active panel.Side, left, right *panel.Panel, status, prompt, viewer string) string {
+func Render(width, height int, active panel.Side, left, right *panel.Panel, status, prompt, viewer, quickView string, leftTabs, rightTabs []string) string {
 	if width < 20 {
 		width = 20
 	}
@@ -36,12 +37,12 @@ func Render(width, height int, active panel.Side, left, right *panel.Panel, stat
 
 	fnBar := fnKeyStyle.Render("F1 Help  F2 Rename  F3 View  F4 Edit  F5 Copy  F6 Move  F7 Mkdir  F8 Delete  F9 Term  F10 Menu")
 	driveBar := driveStyle.Render("Drives: Alt+F1 left | Alt+F2 right")
-	leftTab := tabStyle.Render("L: " + shorten(left.Title(), 24))
-	rightTab := tabStyle.Render("R: " + shorten(right.Title(), 24))
+	leftTab := tabStyle.Render("L: " + formatTabs(leftTabs))
+	rightTab := tabStyle.Render("R: " + formatTabs(rightTabs))
 	tabBar := lipgloss.JoinHorizontal(lipgloss.Top, leftTab, "  |  ", rightTab)
 
 	chromeHeight := 6
-	if viewer != "" {
+	if viewer != "" || quickView != "" {
 		chromeHeight = 10
 	}
 	panelHeight := height - chromeHeight
@@ -49,12 +50,15 @@ func Render(width, height int, active panel.Side, left, right *panel.Panel, stat
 		panelHeight = 3
 	}
 	panelWidth := (width - 3) / 2
+	if quickView != "" {
+		panelWidth = (width - 5) / 3
+	}
 	if panelWidth < 10 {
 		panelWidth = 10
 	}
 
-	leftBody := renderPanelBody(left, panelWidth-4, panelHeight-2, active == panel.Left)
-	rightBody := renderPanelBody(right, panelWidth-4, panelHeight-2, active == panel.Right)
+	leftBody := renderPanelBody(left, panelWidth-4, panelHeight-2)
+	rightBody := renderPanelBody(right, panelWidth-4, panelHeight-2)
 
 	leftBox := inactiveBorder.Width(panelWidth).Height(panelHeight).Render(leftBody)
 	if active == panel.Left {
@@ -66,6 +70,10 @@ func Render(width, height int, active panel.Side, left, right *panel.Panel, stat
 	}
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, leftBox, " ", rightBox)
+	if quickView != "" {
+		qv := qvStyle.Width(panelWidth).Height(panelHeight).Render(quickView)
+		panels = lipgloss.JoinHorizontal(lipgloss.Top, panels, " ", qv)
+	}
 
 	cmdLine := cmdLineStyle.Render("> " + prompt)
 	if status == "" {
@@ -80,11 +88,23 @@ func Render(width, height int, active panel.Side, left, right *panel.Panel, stat
 	return strings.Join(lines, "\n")
 }
 
-func renderPanelBody(p *panel.Panel, width, rows int, _ bool) string {
+func formatTabs(tabs []string) string {
+	if len(tabs) == 0 {
+		return "/"
+	}
+	parts := make([]string, len(tabs))
+	for i, t := range tabs {
+		parts[i] = "[" + shorten(t, 12) + "]"
+	}
+	return strings.Join(parts, " ")
+}
+
+func renderPanelBody(p *panel.Panel, width, rows int) string {
 	if rows < 1 {
 		rows = 1
 	}
-	if p == nil || len(p.Entries) == 0 {
+	entries := p.VisibleEntries()
+	if p == nil || len(entries) == 0 {
 		return strings.Repeat("\n", rows-1) + "  (empty)"
 	}
 	start := 0
@@ -92,7 +112,7 @@ func renderPanelBody(p *panel.Panel, width, rows int, _ bool) string {
 		start = p.Cursor - rows + 1
 	}
 	lines := make([]string, 0, rows)
-	for i := start; i < len(p.Entries) && len(lines) < rows; i++ {
+	for i := start; i < len(entries) && len(lines) < rows; i++ {
 		if p.Renaming && i == p.Cursor {
 			lines = append(lines, "> * "+p.RenameValue+"_")
 			continue
@@ -121,5 +141,5 @@ func RenderViewer(path, content string, maxLines int) string {
 	if len(lines) > maxLines {
 		lines = lines[:maxLines]
 	}
-	return fmt.Sprintf("Viewer: %s\n%s", path, strings.Join(lines, "\n"))
+	return fmt.Sprintf("Viewer: %s\n%s", shorten(path, 40), strings.Join(lines, "\n"))
 }
